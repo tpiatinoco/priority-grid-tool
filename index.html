@@ -73,16 +73,13 @@
     --p9: #d1555a; --p9-ink: #26080a;
   }
   * { box-sizing: border-box; }
-  html, body { background: var(--bg); height: 100%; }
+  html, body { background: var(--bg); }
   body {
     color: var(--ink);
     font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     padding: 18px 22px;
-    height: 100vh;
-    height: 100dvh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    margin: 0;
+    min-height: 100vh;
   }
   .mono {
     font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -91,12 +88,8 @@
   .page {
     width: 100%;
     max-width: none;
-    height: 100%;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
   }
-  .header { margin-bottom: 8px; max-width: 640px; flex-shrink: 0; }
+  .header { margin-bottom: 14px; max-width: 640px; }
   .header h1 {
     font-size: 24px;
     font-weight: 650;
@@ -112,30 +105,22 @@
   }
   .layout {
     display: grid;
-    grid-template-columns: minmax(260px, 300px) minmax(0, 1fr) minmax(240px, 280px);
+    grid-template-columns: minmax(260px, 300px) minmax(0, 1fr) minmax(240px, 300px);
     gap: 18px;
-    align-items: stretch;
-    flex: 1;
-    min-height: 0;
+    align-items: start;
   }
   @media (max-width: 1150px) {
     .layout { grid-template-columns: 1fr; }
-    body { overflow: auto; height: auto; min-height: 100vh; }
   }
   .sidebar {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    min-height: 0;
-    overflow-y: auto;
   }
-  .sidebar .panel { flex-shrink: 0; }
   .ranked-panel {
     display: flex;
     flex-direction: column;
-    min-height: 0;
   }
-  .ranked-panel .list-head, .ranked-panel > .panel-hint { flex-shrink: 0; }
   .panel {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -225,8 +210,6 @@
     flex-direction: column;
     gap: 7px;
     min-height: 40px;
-    max-height: 190px;
-    overflow-y: auto;
     border-radius: 10px;
     padding: 2px;
     transition: background 0.12s ease;
@@ -247,7 +230,7 @@
   }
   .drag-card:active { cursor: grabbing; }
   .drag-card.dragging { opacity: 0.4; }
-  .drag-card .name { word-break: break-word; }
+  .drag-card .name { overflow-wrap: anywhere; }
   .drag-card .name .example-tag {
     font-style: italic;
     opacity: 0.65;
@@ -281,7 +264,7 @@
     color: var(--ink-faint);
     padding: 8px 6px;
   }
-  .ranked-list { display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 60px; overflow-y: auto; }
+  .ranked-list { display: flex; flex-direction: column; gap: 6px; min-height: 60px; }
   .row {
     display: grid;
     grid-template-columns: 26px 1fr auto;
@@ -345,12 +328,10 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 20px 20px 22px;
+    padding: 20px 22px 24px;
     display: flex;
     flex-direction: column;
     min-width: 0;
-    min-height: 0;
-    overflow: auto;
   }
   .matrix-wrap h2 {
     font-size: 12.5px;
@@ -359,22 +340,17 @@
     letter-spacing: 0.05em;
     color: var(--ink-soft);
     margin: 0 0 18px;
-    flex-shrink: 0;
   }
   .grid-center {
-    flex: 1;
-    min-height: 0;
-    min-width: 0;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     gap: 18px;
   }
   .grid {
     display: grid;
     width: 100%;
-    grid-template-columns: 22px 58px repeat(3, minmax(0, 1fr));
-    grid-template-rows: 24px repeat(3, minmax(60px, auto)) 28px;
+    grid-template-columns: 22px 58px repeat(3, minmax(140px, 1fr));
+    grid-template-rows: 24px repeat(3, minmax(72px, auto)) 28px;
     gap: 10px;
   }
   .y-label {
@@ -414,13 +390,12 @@
     min-width: 0;
     border-radius: 12px;
     box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
-    padding: 9px 11px 8px;
+    padding: 10px 12px 9px;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    min-height: 60px;
-    align-self: start;
-    transition: box-shadow 0.12s ease, min-height 0.2s ease, padding 0.2s ease;
+    min-height: 72px;
+    align-self: stretch;
   }
   .cell.drag-over {
     box-shadow: inset 0 0 0 3px rgba(255,255,255,0.65);
@@ -436,8 +411,6 @@
     font-weight: 800;
     line-height: 1.25;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
   .cell .cell-rank {
     font-size: 10.5px;
@@ -482,9 +455,8 @@
     display: flex;
     flex-direction: column;
     gap: 5px;
-    max-height: min(260px, 30vh);
-    overflow-y: auto;
   }
+  .cell .chip .name { overflow-wrap: anywhere; }
   .drop-hint {
     font-size: 10.5px;
     font-style: italic;
