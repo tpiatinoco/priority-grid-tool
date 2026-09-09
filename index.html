@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Priority Grid</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;650;700&family=IBM+Plex+Mono:wght@500;700&display=swap">
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-alt: #eef0f4;
+    --ink: #1b2130;
+    --ink-soft: #636b7a;
+    --ink-faint: #9198a6;
+    --border: #dde1e8;
+    --accent: #2d5bd7;
+    --accent-soft: #e8edfc;
+    --accent-ink: #1c3a94;
+    --danger: #c0392b;
+    --p1: #17916a; --p1-ink: #ffffff;
+    --p2: #3fa15d; --p2-ink: #ffffff;
+    --p3: #4f8f6f; --p3-ink: #ffffff;
+    --p4: #96ac48; --p4-ink: #22270a;
+    --p5: #c2ab42; --p5-ink: #2c2408;
+    --p6: #d99a3f; --p6-ink: #2c1c05;
+    --p7: #d3ccb8; --p7-ink: #2a2517;
+    --p8: #dd6448; --p8-ink: #ffffff;
+    --p9: #cc3f45; --p9-ink: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14161c;
+      --surface: #1c1f28;
+      --surface-alt: #23262f;
+      --ink: #eef0f4;
+      --ink-soft: #9aa0ad;
+      --ink-faint: #6b7080;
+      --border: #2e323c;
+      --accent: #6d8bff;
+      --accent-soft: #212a45;
+      --accent-ink: #c1cbff;
+      --p1: #1caa7c; --p1-ink: #06231a;
+      --p2: #45b467; --p2-ink: #06210d;
+      --p3: #5aa480; --p3-ink: #06211a;
+      --p4: #a7bb52; --p4-ink: #1c2005;
+      --p5: #cbb64e; --p5-ink: #241d05;
+      --p6: #e0a34a; --p6-ink: #241705;
+      --p7: #74705f; --p7-ink: #f1eee2;
+      --p8: #e2765a; --p8-ink: #260c05;
+      --p9: #d1555a; --p9-ink: #26080a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14161c;
+    --surface: #1c1f28;
+    --surface-alt: #23262f;
+    --ink: #eef0f4;
+    --ink-soft: #9aa0ad;
+    --ink-faint: #6b7080;
+    --border: #2e323c;
+    --accent: #6d8bff;
+    --accent-soft: #212a45;
+    --accent-ink: #c1cbff;
+    --p1: #1caa7c; --p1-ink: #06231a;
+    --p2: #45b467; --p2-ink: #06210d;
+    --p3: #5aa480; --p3-ink: #06211a;
+    --p4: #a7bb52; --p4-ink: #1c2005;
+    --p5: #cbb64e; --p5-ink: #241d05;
+    --p6: #e0a34a; --p6-ink: #241705;
+    --p7: #74705f; --p7-ink: #f1eee2;
+    --p8: #e2765a; --p8-ink: #260c05;
+    --p9: #d1555a; --p9-ink: #26080a;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); height: 100%; }
+  body {
+    color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: 18px 22px;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .mono {
+    font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .page {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .header { margin-bottom: 8px; max-width: 640px; flex-shrink: 0; }
+  .header h1 {
+    font-size: 24px;
+    font-weight: 650;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .header p {
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr 300px;
+    gap: 22px;
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;
+  }
+  @media (max-width: 1150px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .sidebar .panel { flex-shrink: 0; }
+  .ranked-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .ranked-panel .list-head, .ranked-panel > .panel-hint { flex-shrink: 0; }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 18px 20px;
+  }
+  .panel h2 {
+    font-size: 12.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+    margin: 0 0 4px;
+  }
+  .panel .panel-hint {
+    font-size: 12px;
+    color: var(--ink-faint);
+    margin: 0 0 14px;
+  }
+  form { display: flex; flex-direction: column; gap: 12px; }
+  label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    display: block;
+    margin-bottom: 5px;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 9px 11px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-alt);
+    color: var(--ink);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  input[type="text"]:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  button.primary {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 2px;
+  }
+  button.primary:hover { filter: brightness(1.06); }
+  button.primary:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+  button.primary:disabled { opacity: 0.55; cursor: default; }
+  button.danger-btn {
+    padding: 9px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--danger);
+    background: transparent;
+    color: var(--danger);
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.danger-btn:hover { background: rgba(192, 57, 43, 0.1); }
+  button.danger-btn:focus-visible { outline: 2px solid var(--danger); outline-offset: 2px; }
+  .clear-btn {
+    border: none;
+    background: none;
+    color: var(--ink-faint);
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .clear-btn:hover { color: var(--danger); }
+  .list-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .list-head h2 { margin: 0; }
+  .tray {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-height: 40px;
+    max-height: 190px;
+    overflow-y: auto;
+    border-radius: 10px;
+    padding: 2px;
+    transition: background 0.12s ease;
+  }
+  .tray.drag-over {
+    background: var(--accent-soft);
+  }
+  .drag-card {
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 13px;
+    line-height: 1.32;
+    cursor: grab;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .drag-card:active { cursor: grabbing; }
+  .drag-card.dragging { opacity: 0.4; }
+  .drag-card .name { word-break: break-word; }
+  .drag-card .name .example-tag {
+    font-style: italic;
+    opacity: 0.65;
+    font-size: 11px;
+  }
+  .drag-card .del {
+    border: none;
+    background: none;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0 1px;
+  }
+  .tray-card {
+    background: var(--surface-alt);
+    border: 1px dashed var(--border);
+    color: var(--ink);
+  }
+  .tray-card .del { color: var(--ink-faint); }
+  .tray-card .del:hover { color: var(--danger); }
+  .chip {
+    background: rgba(255,255,255,0.92);
+    color: #1a1a1a;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+  .chip .del { color: #555; }
+  .chip .del:hover { color: #a02020; }
+  .empty-state {
+    font-size: 12.5px;
+    color: var(--ink-faint);
+    padding: 8px 6px;
+  }
+  .ranked-list { display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 60px; overflow-y: auto; }
+  .row {
+    display: grid;
+    grid-template-columns: 26px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 9px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+  }
+  .row .rank-badge {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11.5px;
+    font-weight: 700;
+  }
+  .row .info { min-width: 0; }
+  .row .name {
+    font-size: 13.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .row .name .example-tag {
+    font-weight: 500;
+    font-style: italic;
+    color: var(--ink-faint);
+    font-size: 11.5px;
+  }
+  .row .tier {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .row .del {
+    border: none;
+    background: none;
+    color: var(--ink-faint);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 4px;
+  }
+  .row .del:hover { color: var(--danger); }
+  .export-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .export-status {
+    font-size: 12px;
+    color: var(--ink-faint);
+  }
+  .export-status.error { color: var(--danger); }
+  .matrix-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px 26px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .matrix-wrap h2 {
+    font-size: 12.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+    margin: 0 0 18px;
+    flex-shrink: 0;
+  }
+  .grid-center {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 22px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 30px 82px repeat(3, minmax(160px, 1fr));
+    grid-template-rows: 24px repeat(3, minmax(64px, auto)) 30px;
+    gap: 12px;
+  }
+  .y-label {
+    grid-column: 1; grid-row: 2 / 5;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .y-label span {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .col-label {
+    grid-row: 1;
+    display: flex; align-items: flex-end; justify-content: center;
+    font-size: 12px; font-weight: 700; color: var(--ink-soft);
+  }
+  .col-low  { grid-column: 3; }
+  .col-med  { grid-column: 4; }
+  .col-high { grid-column: 5; }
+  .row-label {
+    grid-column: 2;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 8px;
+    font-size: 12px; font-weight: 700; color: var(--ink-soft);
+    text-align: right;
+  }
+  .row-high { grid-row: 2; }
+  .row-med  { grid-row: 3; }
+  .row-low  { grid-row: 4; }
+  .cell {
+    position: relative;
+    border-radius: 12px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+    padding: 10px 12px 9px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 60px;
+    align-self: start;
+    transition: box-shadow 0.12s ease, min-height 0.2s ease, padding 0.2s ease;
+  }
+  .cell.drag-over {
+    box-shadow: inset 0 0 0 3px rgba(255,255,255,0.65);
+  }
+  .cell .cell-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .cell .cell-label {
+    font-size: 12.5px;
+    font-weight: 800;
+    line-height: 1.25;
+  }
+  .cell .cell-rank {
+    font-size: 10.5px;
+    font-weight: 700;
+    opacity: 0.75;
+    flex-shrink: 0;
+  }
+  .cell-tooltip {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 10px 12px;
+    background: rgba(15, 16, 22, 0.74);
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.35;
+    border-radius: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    z-index: 2;
+  }
+  .cell.drag-over .cell-tooltip {
+    opacity: 1;
+  }
+  .cell .flag {
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.8;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: 1px 6px;
+    align-self: flex-start;
+  }
+  .cell .chips {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: min(260px, 30vh);
+    overflow-y: auto;
+  }
+  .drop-hint {
+    font-size: 10.5px;
+    font-style: italic;
+    opacity: 0.6;
+    border: 1px dashed currentColor;
+    border-radius: 6px;
+    padding: 6px 8px;
+    text-align: center;
+  }
+  .x-title {
+    grid-column: 3 / 6; grid-row: 5;
+    display: flex; align-items: flex-start; justify-content: center;
+    font-weight: 700; font-size: 12.5px; letter-spacing: 0.06em;
+    color: var(--ink-soft); text-transform: uppercase;
+  }
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+  }
+  .legend .bar {
+    flex: 1;
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--p1), var(--p4), var(--p5), var(--p6), var(--p9));
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1>Priority Grid</h1>
+    <p>Name a project, then drag its card onto the grid cell that matches its effort and impact. Cells grow with the number of cards they hold, and the ranking below updates as you go.</p>
+  </div>
+  <div class="layout">
+    <div class="sidebar">
+      <div class="panel">
+        <h2>Add a project</h2>
+        <p class="panel-hint">Just the name for now — you’ll set its priority by dragging it in a moment.</p>
+        <form id="addForm">
+          <div>
+            <label for="projectName">Project name</label>
+            <input type="text" id="projectName" placeholder="e.g. Automate weekly status report" maxlength="80" required />
+          </div>
+          <button type="submit" class="primary">Add project</button>
+        </form>
+      </div>
+      <div class="panel">
+        <h2>New projects</h2>
+        <p class="panel-hint" id="trayHint"></p>
+        <div class="tray" id="unsortedTray"></div>
+      </div>
+      <div class="panel">
+        <h2>Export</h2>
+        <p class="panel-hint">Every project and its priority, as a spreadsheet.</p>
+        <div class="export-row">
+          <button class="primary" id="exportBtn" type="button">Download Excel</button>
+          <span class="export-status" id="exportStatus"></span>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Reset</h2>
+        <p class="panel-hint">Remove every project from the tray, the grid, and the ranking.</p>
+        <button class="danger-btn" id="clearAllBtn" type="button">Clear all projects</button>
+      </div>
+    </div>
+    <div class="matrix-wrap">
+      <h2>Effort &times; Impact grid</h2>
+      <div class="grid-center">
+        <div class="grid" id="grid">
+          <div class="y-label"><span>Impact</span></div>
+          <div class="col-label col-low">Low</div>
+          <div class="col-label col-med">Medium</div>
+          <div class="col-label col-high">High</div>
+          <div class="row-label row-high">High</div>
+          <div class="row-label row-med">Medium</div>
+          <div class="row-label row-low">Low</div>
+          <div class="x-title">Effort</div>
+        </div>
+        <div class="legend">
+          <span>Highest priority</span>
+          <div class="bar"></div>
+          <span>Lowest priority</span>
+        </div>
+      </div>
+    </div>
+    <div class="panel ranked-panel">
+      <div class="list-head">
+        <h2>Placed projects, ranked</h2>
+        <button class="clear-btn" id="clearBtn" type="button">Clear all</button>
+      </div>
+      <p class="panel-hint">Highest priority first. Drag a card onto the grid to place it.</p>
+      <div class="ranked-list" id="rankedList"></div>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function() {
+  var PRIORITIES = [
+    { rank: 1, effort: 'low',    impact: 'high',   label: 'Quick Win',         note: 'Do it now',                color: 'p1' },
+    { rank: 2, effort: 'medium', impact: 'high',   label: 'Priority',          note: 'Plan for soon',             color: 'p2' },
+    { rank: 3, effort: 'high',   impact: 'high',   label: 'Strategic Project', note: 'Worth it, needs planning',  color: 'p3', flag: 'Needs resources' },
+    { rank: 4, effort: 'low',    impact: 'medium', label: 'Worthwhile',        note: 'Do when there is room',     color: 'p4' },
+    { rank: 5, effort: 'medium', impact: 'medium', label: 'Consider',         note: 'Weigh against the rest',    color: 'p5' },
+    { rank: 6, effort: 'high',   impact: 'medium', label: 'Costly',            note: 'Rarely worth the cost',     color: 'p6' },
+    { rank: 7, effort: 'low',    impact: 'low',    label: 'Filler',            note: 'Only if time allows',       color: 'p7' },
+    { rank: 8, effort: 'medium', impact: 'low',    label: 'Skip',              note: 'Almost never worth it',     color: 'p8' },
+    { rank: 9, effort: 'high',   impact: 'low',    label: 'Avoid',             note: 'Worst combination',         color: 'p9' }
+  ];
+  var byRank = {};
+  PRIORITIES.forEach(function(p) { byRank[p.rank] = p; });
+  var STORAGE_KEY = 'priority-grid-projects-v2';
+  var EXAMPLES = [
+    { id: 'ex1', name: 'Automate weekly status report', rank: 1, example: true },
+    { id: 'ex2', name: 'Migrate reporting to new platform', rank: 3, example: true },
+    { id: 'ex3', name: 'Reorganize shared drive folders', rank: null, example: true }
+  ];
+  var projects = loadProjects();
+  function loadProjects() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) { /* ignore, fall back to examples */ }
+    return EXAMPLES.slice();
+  }
+  function saveProjects() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+    } catch (e) { /* storage unavailable, continue in memory only */ }
+  }
+  function uid() {
+    return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  var gridEl = document.getElementById('grid');
+  var cellEls = {};
+  var ROW_OF_IMPACT = { high: 2, medium: 3, low: 4 };
+  var COL_OF_EFFORT = { low: 3, medium: 4, high: 5 };
+  var draggingId = null;
+  function setupDropZone(el, rankValue) {
+    el.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      el.classList.add('drag-over');
+    });
+    el.addEventListener('dragleave', function() {
+      el.classList.remove('drag-over');
+    });
+    el.addEventListener('drop', function(e) {
+      e.preventDefault();
+      el.classList.remove('drag-over');
+      if (draggingId == null) return;
+      var proj = projects.filter(function(p) { return p.id === draggingId; })[0];
+      if (proj) {
+        proj.rank = rankValue;
+        saveProjects();
+        render();
+      }
+      draggingId = null;
+    });
+  }
+  PRIORITIES.forEach(function(p) {
+    var cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.style.background = 'var(--' + p.color + ')';
+    cell.style.color = 'var(--' + p.color + '-ink)';
+    cell.style.gridColumn = COL_OF_EFFORT[p.effort];
+    cell.style.gridRow = ROW_OF_IMPACT[p.impact];
+    var head = document.createElement('div');
+    head.className = 'cell-head';
+    var labelEl = document.createElement('div');
+    labelEl.className = 'cell-label';
+    labelEl.textContent = p.label;
+    var rankEl = document.createElement('div');
+    rankEl.className = 'cell-rank';
+    rankEl.textContent = '#' + p.rank;
+    head.appendChild(labelEl);
+    head.appendChild(rankEl);
+    cell.appendChild(head);
+    var tooltip = document.createElement('div');
+    tooltip.className = 'cell-tooltip';
+    tooltip.textContent = p.note;
+    cell.appendChild(tooltip);
+    if (p.flag) {
+      var flagEl = document.createElement('div');
+      flagEl.className = 'flag';
+      flagEl.textContent = p.flag;
+      cell.appendChild(flagEl);
+    }
+    var chips = document.createElement('div');
+    chips.className = 'chips';
+    cell.appendChild(chips);
+    gridEl.appendChild(cell);
+    cellEls[p.rank] = chips;
+    setupDropZone(cell, p.rank);
+  });
+  var trayEl = document.getElementById('unsortedTray');
+  var trayHintEl = document.getElementById('trayHint');
+  setupDropZone(trayEl, null);
+  var rankedListEl = document.getElementById('rankedList');
+  function buildDragCard(proj, kind) {
+    var card = document.createElement('div');
+    card.className = 'drag-card ' + kind;
+    card.draggable = true;
+    var nameEl = document.createElement('div');
+    nameEl.className = 'name';
+    nameEl.textContent = proj.name;
+    if (proj.example) {
+      var tag = document.createElement('span');
+      tag.className = 'example-tag';
+      tag.textContent = ' (example)';
+      nameEl.appendChild(tag);
+    }
+    var del = document.createElement('button');
+    del.className = 'del';
+    del.textContent = '×';
+    del.title = 'Remove';
+    del.addEventListener('click', function() { removeProject(proj.id); });
+    card.appendChild(nameEl);
+    card.appendChild(del);
+    card.addEventListener('dragstart', function() {
+      draggingId = proj.id;
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', function() {
+      card.classList.remove('dragging');
+    });
+    return card;
+  }
+  function render() {
+    trayEl.innerHTML = '';
+    PRIORITIES.forEach(function(p) { cellEls[p.rank].innerHTML = ''; });
+    rankedListEl.innerHTML = '';
+    var unsorted = projects.filter(function(p) { return p.rank == null; });
+    var assigned = projects.filter(function(p) { return p.rank != null; })
+      .sort(function(a, b) { return a.rank - b.rank; });
+    trayHintEl.textContent = unsorted.length
+      ? (unsorted.length + (unsorted.length === 1 ? ' project waiting' : ' projects waiting') + ' — drag onto the grid.')
+      : 'Drag new projects onto the grid to prioritize them.';
+    if (unsorted.length === 0) {
+      var emptyTray = document.createElement('div');
+      emptyTray.className = 'empty-state';
+      emptyTray.textContent = 'Nothing waiting. Add a project above.';
+      trayEl.appendChild(emptyTray);
+    } else {
+      unsorted.forEach(function(proj) {
+        trayEl.appendChild(buildDragCard(proj, 'tray-card'));
+      });
+    }
+    if (assigned.length === 0) {
+      var emptyList = document.createElement('div');
+      emptyList.className = 'empty-state';
+      emptyList.textContent = 'No projects placed yet.';
+      rankedListEl.appendChild(emptyList);
+    } else {
+      assigned.forEach(function(proj) {
+        var p = byRank[proj.rank];
+        cellEls[proj.rank].appendChild(buildDragCard(proj, 'chip'));
+        var row = document.createElement('div');
+        row.className = 'row';
+        var badge = document.createElement('div');
+        badge.className = 'rank-badge mono';
+        badge.style.background = 'var(--' + p.color + ')';
+        badge.style.color = 'var(--' + p.color + '-ink)';
+        badge.textContent = proj.rank;
+        var info = document.createElement('div');
+        info.className = 'info';
+        var nameEl = document.createElement('div');
+        nameEl.className = 'name';
+        nameEl.textContent = proj.name;
+        if (proj.example) {
+          var tag2 = document.createElement('span');
+          tag2.className = 'example-tag';
+          tag2.textContent = '  example';
+          nameEl.appendChild(tag2);
+        }
+        var tierEl = document.createElement('div');
+        tierEl.className = 'tier';
+        tierEl.textContent = p.label + ' · ' + cap(p.effort) + ' effort / ' + cap(p.impact) + ' impact';
+        info.appendChild(nameEl);
+        info.appendChild(tierEl);
+        var del = document.createElement('button');
+        del.className = 'del';
+        del.textContent = '×';
+        del.title = 'Remove';
+        del.addEventListener('click', function() { removeProject(proj.id); });
+        row.appendChild(badge);
+        row.appendChild(info);
+        row.appendChild(del);
+        rankedListEl.appendChild(row);
+      });
+    }
+    PRIORITIES.forEach(function(p) {
+      if (cellEls[p.rank].children.length === 0) {
+        var hint = document.createElement('div');
+        hint.className = 'drop-hint';
+        hint.textContent = 'Drop here';
+        cellEls[p.rank].appendChild(hint);
+      }
+    });
+  }
+  function removeProject(id) {
+    projects = projects.filter(function(p) { return p.id !== id; });
+    saveProjects();
+    render();
+  }
+  document.getElementById('addForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var nameInput = document.getElementById('projectName');
+    var name = nameInput.value.trim();
+    if (!name) return;
+    projects.push({ id: uid(), name: name, rank: null, example: false });
+    saveProjects();
+    render();
+    nameInput.value = '';
+    nameInput.focus();
+  });
+  function clearAllProjects() {
+    projects = [];
+    saveProjects();
+    render();
+  }
+  document.getElementById('clearBtn').addEventListener('click', clearAllProjects);
+  document.getElementById('clearAllBtn').addEventListener('click', clearAllProjects);
+  var exportBtn = document.getElementById('exportBtn');
+  var exportStatus = document.getElementById('exportStatus');
+  function setStatus(text, isError) {
+    exportStatus.textContent = text;
+    exportStatus.className = 'export-status' + (isError ? ' error' : '');
+  }
+  exportBtn.addEventListener('click', function() {
+    exportToExcel();
+  });
+  function exportToExcel() {
+    if (typeof XLSX === 'undefined') {
+      setStatus('Export library failed to load.', true);
+      return;
+    }
+    if (projects.length === 0) {
+      setStatus('Add a project first.', true);
+      return;
+    }
+    var rows = [['Project', 'Rank', 'Priority', 'Effort', 'Impact']];
+    var ordered = projects.slice().sort(function(a, b) {
+      var ra = a.rank == null ? 99 : a.rank;
+      var rb = b.rank == null ? 99 : b.rank;
+      return ra - rb;
+    });
+    ordered.forEach(function(proj) {
+      if (proj.rank == null) {
+        rows.push([proj.name, '', 'Unassigned', '', '']);
+      } else {
+        var p = byRank[proj.rank];
+        rows.push([proj.name, proj.rank, p.label, cap(p.effort), cap(p.impact)]);
+      }
+    });
+    var ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 34 }, { wch: 6 }, { wch: 20 }, { wch: 10 }, { wch: 10 }];
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Projects');
+    var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    var blob = new Blob([wbout], { type: 'application/octet-stream' });
+    try {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'priority-grid-projects.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+      setStatus('Saved to your Downloads folder.', false);
+    } catch (e) {
+      setStatus('Could not save the file.', true);
+    }
+  }
+  render();
+})();
+</script>
+</body>
+</html>
